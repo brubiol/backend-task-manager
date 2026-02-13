@@ -76,18 +76,19 @@ class TaskServiceTest {
         task.setPriority(Task.TaskPriority.HIGH);
         task.setCreatedAt(LocalDateTime.now());
 
-        when(taskRepository.findByIdWithRelationships(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdWithTags(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdWithComments(1L)).thenReturn(Optional.of(task));
 
         TaskDTO result = taskService.getTaskById(1L);
 
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
-        verify(taskRepository, times(1)).findByIdWithRelationships(1L);
+        verify(taskRepository, times(1)).findByIdWithTags(1L);
     }
 
     @Test
     void getTaskById_NonExistingTask_ThrowsException() {
-        when(taskRepository.findByIdWithRelationships(1L)).thenReturn(Optional.empty());
+        when(taskRepository.findByIdWithTags(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.getTaskById(1L))
             .isInstanceOf(ResourceNotFoundException.class)

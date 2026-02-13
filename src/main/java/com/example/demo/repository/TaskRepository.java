@@ -32,8 +32,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     /**
      * JOIN FETCH to prevent N+1 queries when loading a task with its tags and comments.
      */
-    @Query("SELECT DISTINCT t FROM Task t LEFT JOIN FETCH t.tags LEFT JOIN FETCH t.comments WHERE t.id = :id AND t.deleted = false")
-    Optional<Task> findByIdWithRelationships(@Param("id") Long id);
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.tags WHERE t.id = :id AND t.deleted = false")
+    Optional<Task> findByIdWithTags(@Param("id") Long id);
+
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.comments WHERE t.id = :id AND t.deleted = false")
+    Optional<Task> findByIdWithComments(@Param("id") Long id);
 
     Page<Task> findByDeletedFalse(Pageable pageable);
 
