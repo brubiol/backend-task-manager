@@ -37,6 +37,9 @@ class TaskServiceTest {
     @Mock
     private TagRepository tagRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     @InjectMocks
     private TaskService taskService;
 
