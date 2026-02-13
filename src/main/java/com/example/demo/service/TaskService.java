@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,15 +43,19 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final TagRepository tagRepository;
+    private final AuditLogService auditLogService;
 
-    public TaskService(TaskRepository taskRepository, TagRepository tagRepository) {
+    public TaskService(TaskRepository taskRepository, TagRepository tagRepository,
+                       AuditLogService auditLogService) {
         this.taskRepository = taskRepository;
         this.tagRepository = tagRepository;
+        this.auditLogService = auditLogService;
     }
 
     // ===== CRUD =====
 
     @Transactional
+    @CacheEvict(cacheNames = "taskLists", allEntries = true)
     public TaskDTO createTask(CreateTaskRequest request) {
         log.info("Creating task: {}", request.getTitle());
 
@@ -62,6 +67,7 @@ public class TaskService {
 
         Task saved = taskRepository.save(task);
         log.info("Task created with id: {}", saved.getId());
+        auditLogService.logTaskEvent("CREATE", saved.getId(), saved.getTitle());
         return TaskDTO.fromEntity(saved);
     }
 
@@ -74,12 +80,16 @@ public class TaskService {
         return TaskDTO.fromEntity(task);
     }
 
+    @Cacheable(cacheNames = "taskLists", key = "'all-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<TaskDTO> getAllTasks(Pageable pageable) {
         return taskRepository.findByDeletedFalse(pageable).map(TaskDTO::fromEntity);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "tasks", key = "#id")
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "tasks", key = "#id"),
+        @CacheEvict(cacheNames = "taskLists", allEntries = true)
+    })
     public TaskDTO updateTask(Long id, UpdateTaskRequest request) {
         log.info("Updating task with id: {}", id);
 
@@ -95,11 +105,15 @@ public class TaskService {
 
         Task updated = taskRepository.save(task);
         log.info("Task updated: {}", updated.getId());
+        auditLogService.logTaskEvent("UPDATE", updated.getId(), updated.getTitle());
         return TaskDTO.fromEntity(updated);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "tasks", key = "#id")
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "tasks", key = "#id"),
+        @CacheEvict(cacheNames = "taskLists", allEntries = true)
+    })
     public void deleteTask(Long id) {
         log.info("Soft-deleting task with id: {}", id);
 
@@ -109,14 +123,17 @@ public class TaskService {
         task.setDeleted(true);
         taskRepository.save(task);
         log.info("Task soft-deleted: {}", id);
+        auditLogService.logTaskEvent("DELETE", id, task.getTitle());
     }
 
     // ===== FILTERING =====
 
+    @Cacheable(cacheNames = "taskLists", key = "'status-' + #status + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<TaskDTO> getTasksByStatus(TaskStatus status, Pageable pageable) {
         return taskRepository.findByStatusAndDeletedFalse(status, pageable).map(TaskDTO::fromEntity);
     }
 
+    @Cacheable(cacheNames = "taskLists", key = "'filter-' + #status + '-' + #priority + '-' + #assignee + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<TaskDTO> getTasksWithFilters(TaskStatus status, TaskPriority priority,
                                               String assignee, Pageable pageable) {
         return taskRepository.findTasksWithFilters(status, priority, assignee, pageable)

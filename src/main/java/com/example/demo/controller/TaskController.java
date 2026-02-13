@@ -57,7 +57,7 @@ public class TaskController {
         TaskDTO task = taskService.getTaskById(id);
         return ResponseEntity.ok(task);
     }
-
+ 
     @GetMapping
     public ResponseEntity<Page<TaskDTO>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
@@ -116,7 +116,6 @@ public class TaskController {
         Sort sort = sortDir.equalsIgnoreCase("asc")
             ? Sort.by(sortBy).ascending()
             : Sort.by(sortBy).descending();
-
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<TaskDTO> tasks = taskService.getTasksWithFilters(status, priority, assignee, pageable);
         return ResponseEntity.ok(tasks);

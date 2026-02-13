@@ -4,10 +4,15 @@ import com.example.demo.entity.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,12 +20,22 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Repository layer integration tests.
+ * Repository layer integration tests against a real Postgres via Testcontainers.
  *
- * @DataJpaTest - Loads only JPA components (H2 in-memory DB, auto-rollback)
+ * KEY CONCEPTS:
+ * - @Testcontainers: manages container lifecycle (start before tests, stop after)
+ * - @ServiceConnection: auto-configures Spring datasource from container
+ * - @AutoConfigureTestDatabase(replace = NONE): prevents Spring from replacing the datasource with embedded DB
+ * - Tests run against real Postgres, catching dialect-specific issues that H2 would miss
  */
 @DataJpaTest
+@Testcontainers
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class TaskRepositoryTest {
+
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
     @Autowired
     private TaskRepository taskRepository;
