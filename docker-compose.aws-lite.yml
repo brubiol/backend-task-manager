@@ -26,6 +26,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       CACHE_TYPE: none
+      SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
 
 volumes:
   pgdata:
