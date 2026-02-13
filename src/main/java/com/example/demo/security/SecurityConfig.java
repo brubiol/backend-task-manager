@@ -46,6 +46,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // DELETE requires ADMIN role
                 .requestMatchers(HttpMethod.DELETE, "/api/tasks/**").hasRole("ADMIN")
