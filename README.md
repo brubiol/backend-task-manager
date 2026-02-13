@@ -79,6 +79,30 @@ Interview Q/A:
 - Contains computed `overdue` flag
 - Includes `comments` and `tagNames` (not raw entities)
 
+---
+
+## Cheap AWS Deploy (EC2 + Docker Compose)
+
+Goal: keep AWS cost under ~$25/month by avoiding ALB, NAT, Redis, and RDS.
+
+**What you run**
+- 1 small EC2 instance (t4g.micro or t3.micro)
+- Docker Compose running the app + Postgres
+
+**Steps (high level)**
+1. Launch EC2 (Amazon Linux 2023), open inbound `8080` in the security group.
+2. Install Docker + docker compose plugin.
+3. Clone this repo on the instance.
+4. Create `.env.aws-lite` from `.env.aws-lite.example` with real secrets.
+5. Run:
+
+```bash
+docker compose -f docker-compose.aws-lite.yml --env-file .env.aws-lite up -d --build
+```
+
+**Why this is cheaper**
+- No ALB (~$16/mo), no NAT (~$32/mo), no Redis (~$10–15/mo), no RDS (~$20+).
+
 `CommentDTO`
 - Read model for comments
 - Includes `taskId` rather than full Task object
