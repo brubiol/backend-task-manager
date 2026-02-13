@@ -10,6 +10,8 @@ import com.example.demo.repository.TagRepository;
 import com.example.demo.repository.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -63,9 +65,12 @@ public class TaskService {
         return TaskDTO.fromEntity(saved);
     }
 
+    @Cacheable(cacheNames = "tasks", key = "#id")
     public TaskDTO getTaskById(Long id) {
-        Task task = taskRepository.findByIdWithRelationships(id)
+        // Two separate fetches to avoid Cartesian product from dual JOIN FETCH
+        Task task = taskRepository.findByIdWithTags(id)
             .orElseThrow(() -> new ResourceNotFoundException("Task", id));
+        taskRepository.findByIdWithComments(id);
         return TaskDTO.fromEntity(task);
     }
 
@@ -74,6 +79,7 @@ public class TaskService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "tasks", key = "#id")
     public TaskDTO updateTask(Long id, UpdateTaskRequest request) {
         log.info("Updating task with id: {}", id);
 
@@ -93,6 +99,7 @@ public class TaskService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "tasks", key = "#id")
     public void deleteTask(Long id) {
         log.info("Soft-deleting task with id: {}", id);
 
